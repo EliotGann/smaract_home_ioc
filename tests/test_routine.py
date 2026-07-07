@@ -85,7 +85,7 @@ def test_home_axis_sequence_sets_reference_and_moves_to_zero():
 def test_refuses_motor_alarm():
     client = ready_client()
     client.values["MTR.SEVR"] = 2
-    axis = AxisConfig("x", "MTR", home_position=-50.0, negative_target=-1000.0)
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
 
     with pytest.raises(RuntimeError, match="alarm severity"):
         SmaractHomer(client).home_axis(axis)

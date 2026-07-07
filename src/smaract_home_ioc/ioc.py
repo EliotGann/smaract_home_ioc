@@ -12,12 +12,12 @@ from .routine import AxisConfig, HomeState, RoutineConfig, SmaractHomer
 
 DEFAULT_IOC_PREFIX = "XF:12IDC-ES:SMARACT_HOME:"
 DEFAULT_X_PREFIX = "XF:12ID2C-ES{MCS:2-Ax:3}Mtr"
-DEFAULT_Z_PREFIX = "XF:12ID2C-ES{MCS:2-Ax:4}Mtr"
+DEFAULT_WBSX_PREFIX = "XF:12ID2C-ES{MCS:2-Ax:1}Mtr"
 
 
 class SmaractHomeIOC(PVGroup):
     home_x = pvproperty(name="HomeX", value=0, dtype=int)
-    home_z = pvproperty(name="HomeZ", value=0, dtype=int)
+    home_wbsx = pvproperty(name="HomeWBSX", value=0, dtype=int)
     abort = pvproperty(name="Abort", value=0, dtype=int)
     arm = pvproperty(name="Arm", value=0, dtype=int)
 
@@ -28,11 +28,11 @@ class SmaractHomeIOC(PVGroup):
     last_error = pvproperty(name="LastError", value="", dtype=str, read_only=True)
 
     x_motor_prefix = pvproperty(name="X:MotorPrefix", value=DEFAULT_X_PREFIX, dtype=str)
-    z_motor_prefix = pvproperty(name="Z:MotorPrefix", value=DEFAULT_Z_PREFIX, dtype=str)
+    wbsx_motor_prefix = pvproperty(name="WBSX:MotorPrefix", value=DEFAULT_WBSX_PREFIX, dtype=str)
     x_home_position = pvproperty(name="X:HomePosition", value=-50000.0)
-    z_home_position = pvproperty(name="Z:HomePosition", value=-25000.0)
+    wbsx_home_position = pvproperty(name="WBSX:HomePosition", value=0.0)
     x_negative_target = pvproperty(name="X:NegativeTarget", value=-1000000.0)
-    z_negative_target = pvproperty(name="Z:NegativeTarget", value=-1000000.0)
+    wbsx_negative_target = pvproperty(name="WBSX:NegativeTarget", value=-1000000.0)
 
     search_timeout = pvproperty(name="SearchTimeout", value=300.0)
     home_timeout = pvproperty(name="HomeTimeout", value=120.0)
@@ -55,10 +55,10 @@ class SmaractHomeIOC(PVGroup):
             await self._start_home("x")
         return 0
 
-    @home_z.putter
-    async def home_z(self, instance, value):
+    @home_wbsx.putter
+    async def home_wbsx(self, instance, value):
         if int(value) != 0:
-            await self._start_home("z")
+            await self._start_home("wbsx")
         return 0
 
     @abort.putter
@@ -88,12 +88,12 @@ class SmaractHomeIOC(PVGroup):
                 home_position=float(self.x_home_position.value),
                 negative_target=float(self.x_negative_target.value),
             )
-        if axis_name == "z":
+        if axis_name == "wbsx":
             return AxisConfig(
-                name="z",
-                motor_prefix=str(self.z_motor_prefix.value),
-                home_position=float(self.z_home_position.value),
-                negative_target=float(self.z_negative_target.value),
+                name="wbsx",
+                motor_prefix=str(self.wbsx_motor_prefix.value),
+                home_position=float(self.wbsx_home_position.value),
+                negative_target=float(self.wbsx_negative_target.value),
             )
         raise ValueError(axis_name)
 

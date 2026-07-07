@@ -1,11 +1,11 @@
 # smaract-home-ioc
 
-Caproto IOC for repeatable homing of the SMI SmarAct piezo `x` and `z` motors.
+Caproto IOC for repeatable homing of selected SMI SmarAct motors.
 
 The IOC does not modify the SmarAct IOC. It commands the existing motor records:
 
 - `piezo.x`: `XF:12ID2C-ES{MCS:2-Ax:3}Mtr`
-- `piezo.z`: `XF:12ID2C-ES{MCS:2-Ax:4}Mtr`
+- WAXS beamstop X: `XF:12ID2C-ES{MCS:2-Ax:1}Mtr`
 
 ## Routine
 
@@ -21,9 +21,9 @@ For one axis at a time:
 Defaults:
 
 - `X:HomePosition = -50000`
-- `Z:HomePosition = -25000`
+- `WBSX:HomePosition = 0`
 - `X:NegativeTarget = -1000000`
-- `Z:NegativeTarget = -1000000`
+- `WBSX:NegativeTarget = -1000000`
 
 The negative target and stall-detection parameters should be tuned carefully during local testing.
 
@@ -63,7 +63,7 @@ pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 
 - `XF:12IDC-ES:SMARACT_HOME:Arm`: set to `1` before each routine.
 - `XF:12IDC-ES:SMARACT_HOME:HomeX`: write `1` to home `x`.
-- `XF:12IDC-ES:SMARACT_HOME:HomeZ`: write `1` to home `z`.
+- `XF:12IDC-ES:SMARACT_HOME:HomeWBSX`: write `1` to home WAXS beamstop X.
 - `XF:12IDC-ES:SMARACT_HOME:Abort`: write `1` to request abort.
 - `XF:12IDC-ES:SMARACT_HOME:Busy`: `1` while a routine is active.
 - `XF:12IDC-ES:SMARACT_HOME:ActiveAxis`: active axis name.
@@ -71,9 +71,9 @@ pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 - `XF:12IDC-ES:SMARACT_HOME:Message`: current detail message.
 - `XF:12IDC-ES:SMARACT_HOME:LastError`: last error message.
 - `XF:12IDC-ES:SMARACT_HOME:X:HomePosition`: current-position value applied after `x` home-forward.
-- `XF:12IDC-ES:SMARACT_HOME:Z:HomePosition`: current-position value applied after `z` home-forward.
+- `XF:12IDC-ES:SMARACT_HOME:WBSX:HomePosition`: current-position value applied after WAXS beamstop X home-forward.
 - `XF:12IDC-ES:SMARACT_HOME:X:NegativeTarget`: target used to search negative stop for `x`.
-- `XF:12IDC-ES:SMARACT_HOME:Z:NegativeTarget`: target used to search negative stop for `z`.
+- `XF:12IDC-ES:SMARACT_HOME:WBSX:NegativeTarget`: target used to search negative stop for WAXS beamstop X.
 - `XF:12IDC-ES:SMARACT_HOME:StallSeconds`: unchanged-readback time required to call the negative stop reached.
 - `XF:12IDC-ES:SMARACT_HOME:StallTolerance`: readback change below this is treated as unchanged.
 - `XF:12IDC-ES:SMARACT_HOME:MotionStartTimeout`: grace period for `.DMOV/.MOVN` to show motion before accepting an already-done command.
@@ -96,4 +96,4 @@ Example:
 SMARACT_HOME_IOC_PREFIX='XF:12IDC-ES:SMARACT_HOME_TEST:' pixi run ioc
 ```
 
-Then adjust `X:NegativeTarget`, `Z:NegativeTarget`, `StallSeconds`, and `StallTolerance` before triggering `HomeX` or `HomeZ`.
+Then adjust `X:NegativeTarget`, `WBSX:NegativeTarget`, `StallSeconds`, and `StallTolerance` before triggering `HomeX` or `HomeWBSX`.
