@@ -29,8 +29,8 @@ class SmaractHomeIOC(PVGroup):
 
     x_motor_prefix = pvproperty(name="X:MotorPrefix", value=DEFAULT_X_PREFIX, dtype=str)
     z_motor_prefix = pvproperty(name="Z:MotorPrefix", value=DEFAULT_Z_PREFIX, dtype=str)
-    x_home_position = pvproperty(name="X:HomePosition", value=-50.0)
-    z_home_position = pvproperty(name="Z:HomePosition", value=-25.0)
+    x_home_position = pvproperty(name="X:HomePosition", value=-50000.0)
+    z_home_position = pvproperty(name="Z:HomePosition", value=-25000.0)
     x_negative_target = pvproperty(name="X:NegativeTarget", value=-1000000.0)
     z_negative_target = pvproperty(name="Z:NegativeTarget", value=-1000000.0)
 

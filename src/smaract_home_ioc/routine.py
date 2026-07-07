@@ -146,6 +146,15 @@ class SmaractHomer:
         while time.monotonic() < deadline:
             self._check_abort(abort_event, axis)
             time.sleep(self.config.poll_period)
+
+            if self._get_int(self._pv(axis, "LLS"), default=0) != 0 or self._get_int(
+                self._pv(axis, "HLS"), default=0
+            ) != 0:
+                self._stop(axis)
+                time.sleep(self.config.settle_seconds)
+                progress(HomeState.FINDING_NEGATIVE_LIMIT, f"{axis.name}: limit flag detected")
+                return
+
             rbv = self._get_float(self._pv(axis, "RBV"))
             if abs(rbv - last_rbv) > self.config.stall_tolerance:
                 last_rbv = rbv

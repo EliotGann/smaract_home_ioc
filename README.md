@@ -12,16 +12,16 @@ The IOC does not modify the SmarAct IOC. It commands the existing motor records:
 For one axis at a time:
 
 1. Require `Arm=1` and verify the motor is enabled, idle, not in limit violation, and not in alarm.
-2. Move toward a configurable negative target until the readback stalls or the move completes.
-3. Stop the motor after detecting the negative stop.
+2. Move toward a configurable negative target until a motor-record limit flag lights.
+3. Stop the motor after detecting the limit flag. Stall detection remains as a fallback.
 4. Run the motor-record home-forward command with `.HOMF`.
 5. Put the motor record in set mode, set the current user position to the configured home position, and exit set mode.
 6. Move the axis to the new user position `0`.
 
 Defaults:
 
-- `X:HomePosition = -50`
-- `Z:HomePosition = -25`
+- `X:HomePosition = -50000`
+- `Z:HomePosition = -25000`
 - `X:NegativeTarget = -1000000`
 - `Z:NegativeTarget = -1000000`
 

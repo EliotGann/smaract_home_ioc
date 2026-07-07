@@ -12,8 +12,14 @@ class FakeClient:
         self.values = defaultdict(lambda: 0)
         self.puts = []
         self.rbv_values = []
+        self.limit_after_reads = None
+        self._limit_reads = 0
 
     def get(self, pv, *, timeout=2.0):
+        if pv.endswith(".LLS") and self.limit_after_reads is not None:
+            self._limit_reads += 1
+            if self._limit_reads >= self.limit_after_reads:
+                self.values[pv] = 1
         if pv.endswith(".RBV") and self.rbv_values:
             return self.rbv_values.pop(0)
         return self.values[pv]
@@ -45,8 +51,9 @@ def ready_client(prefix="MTR"):
 
 def test_home_axis_sequence_sets_reference_and_moves_to_zero():
     client = ready_client()
-    client.rbv_values = [10.0, 9.0, 8.0, 8.0, 8.0]
-    axis = AxisConfig("x", "MTR", home_position=-50.0, negative_target=-1000.0)
+    client.rbv_values = [10.0, 9.0]
+    client.limit_after_reads = 2
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
     config = RoutineConfig(
         search_timeout=2.0,
         home_timeout=2.0,
@@ -65,10 +72,11 @@ def test_home_axis_sequence_sets_reference_and_moves_to_zero():
     )
 
     assert state == HomeState.HOMED
-    assert ("MTR.VAL", -1000.0, False) in client.puts
+    assert ("MTR.VAL", -1000000.0, False) in client.puts
+    assert ("MTR.STOP", 1, False) in client.puts
     assert ("MTR.HOMF", 1, False) in client.puts
     assert ("MTR.SET", 1, True) in client.puts
-    assert ("MTR.VAL", -50.0, True) in client.puts
+    assert ("MTR.VAL", -50000.0, True) in client.puts
     assert ("MTR.SET", 0, True) in client.puts
     assert client.puts[-1] == ("MTR.VAL", 0.0, False)
     assert states[-1] == HomeState.HOMED
