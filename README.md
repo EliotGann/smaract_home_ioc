@@ -39,6 +39,8 @@ If local workstation networking blocks EPICS broadcast beacons, run with the loc
 pixi run ioc-local --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 ```
 
+This uses `EPICS_CAS_BEACON_ADDR_LIST=10.67.91.255`, matching the SMI workstation CA broadcast address.
+
 The default IOC prefix is:
 
 ```text
