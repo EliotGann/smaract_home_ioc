@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smaract-home-ioc"
+version = "0.1.0"
+description = "Caproto IOC for repeatable SmarAct piezo homing."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "caproto>=1.1",
+    "pyepics>=3.5",
+]
+
+[project.scripts]
+smaract-home-ioc = "smaract_home_ioc.ioc:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

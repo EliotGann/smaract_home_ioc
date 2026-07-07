@@ -1,0 +1,14 @@
+[workspace]
+name = "smaract-home-ioc"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "3.12.*"
+caproto = ">=1.1"
+pyepics = ">=3.5"
+pytest = ">=8"
+
+[tasks]
+ioc = "PYTHONPATH=src python -m smaract_home_ioc.ioc"
+test = "PYTHONPATH=src pytest -q"
