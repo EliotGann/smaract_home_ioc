@@ -33,7 +33,7 @@ The negative target and stall-detection parameters should be tuned carefully dur
 pixi run ioc
 ```
 
-If local workstation networking blocks EPICS broadcast beacons, run with beacons pointed at localhost:
+If local workstation networking blocks EPICS broadcast beacons, run with the local task:
 
 ```bash
 pixi run ioc-local --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
