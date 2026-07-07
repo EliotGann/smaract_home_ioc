@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import asyncio
 import os
 from threading import Event
@@ -147,21 +146,18 @@ class SmaractHomeIOC(PVGroup):
         await self.last_error.write(message)
 
 
-def build_arg_parser() -> argparse.ArgumentParser:
-    parser, _ = ioc_arg_parser(
+def parse_ioc_args():
+    return ioc_arg_parser(
         default_prefix=os.environ.get("SMARACT_HOME_IOC_PREFIX", DEFAULT_IOC_PREFIX),
         desc="Repeatable SmarAct piezo homing IOC",
     )
-    return parser
 
 
 def main() -> None:
-    parser = build_arg_parser()
-    args = parser.parse_args()
-    ioc_options = vars(args)
-    prefix = ioc_options.pop("prefix")
+    ioc_options, run_options = parse_ioc_args()
+    prefix = ioc_options["prefix"]
     ioc = SmaractHomeIOC(prefix=prefix)
-    run(ioc.pvdb, **ioc_options)
+    run(ioc.pvdb, **run_options)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,12 @@ The negative target and stall-detection parameters should be tuned carefully dur
 pixi run ioc
 ```
 
+If local workstation networking blocks EPICS broadcast beacons, run with automatic beacons disabled:
+
+```bash
+EPICS_CAS_AUTO_BEACON_ADDR_LIST=no pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
+```
+
 The default IOC prefix is:
 
 ```text
