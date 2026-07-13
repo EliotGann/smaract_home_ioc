@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+from unittest.mock import patch
 
+from smaract_home_ioc import ioc as ioc_module
 from smaract_home_ioc.ioc import load_epics_netsetup
 
 
@@ -50,3 +52,25 @@ def test_load_epics_netsetup_keeps_existing_environment(tmp_path, monkeypatch):
 
 def test_load_epics_netsetup_ignores_missing_file(tmp_path):
     load_epics_netsetup(str(tmp_path / "missing.cmd"))
+
+
+def test_main_loads_netsetup_after_parsing_ioc_args():
+    calls = []
+
+    def parse_ioc_args():
+        calls.append("parse")
+        return {"prefix": "TEST:"}, {"interfaces": ["0.0.0.0"]}
+
+    def load_epics_netsetup():
+        calls.append("load")
+
+    with (
+        patch.object(ioc_module, "parse_ioc_args", parse_ioc_args),
+        patch.object(ioc_module, "load_epics_netsetup", load_epics_netsetup),
+        patch.object(ioc_module, "run") as run,
+    ):
+        ioc_module.main()
+
+    assert calls == ["parse", "load"]
+    assert run.call_args.args[0]
+    assert run.call_args.kwargs["interfaces"] == ["0.0.0.0"]
