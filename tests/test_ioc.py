@@ -54,7 +54,7 @@ def test_load_epics_netsetup_ignores_missing_file(tmp_path):
     load_epics_netsetup(str(tmp_path / "missing.cmd"))
 
 
-def test_main_loads_netsetup_after_parsing_ioc_args():
+def test_main_loads_netsetup_before_parsing_ioc_args():
     calls = []
 
     def parse_ioc_args():
@@ -71,6 +71,6 @@ def test_main_loads_netsetup_after_parsing_ioc_args():
     ):
         ioc_module.main()
 
-    assert calls == ["parse", "load"]
+    assert calls == ["load", "parse"]
     assert run.call_args.args[0]
     assert run.call_args.kwargs["interfaces"] == ["0.0.0.0"]

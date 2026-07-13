@@ -173,8 +173,8 @@ def parse_ioc_args():
 
 
 def main() -> None:
-    ioc_options, run_options = parse_ioc_args()
     load_epics_netsetup()
+    ioc_options, run_options = parse_ioc_args()
     prefix = ioc_options["prefix"]
     ioc = SmaractHomeIOC(prefix=prefix)
     run(ioc.pvdb, **run_options)
