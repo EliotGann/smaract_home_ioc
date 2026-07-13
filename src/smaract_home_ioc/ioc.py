@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import re
 from threading import Event
@@ -18,6 +19,7 @@ DEFAULT_NETSETUP_FILE = "/epics/common/xf12id2-inst-ioc1-netsetup.cmd"
 EPICS_ENV_SET_RE = re.compile(
     r'^\s*epicsEnvSet\(\s*"(?P<name>[^"]+)"\s*,\s*"(?P<value>[^"]*)"\s*\)'
 )
+LOG = logging.getLogger(__name__)
 
 
 def load_epics_netsetup(path: str = DEFAULT_NETSETUP_FILE) -> None:
@@ -31,7 +33,20 @@ def load_epics_netsetup(path: str = DEFAULT_NETSETUP_FILE) -> None:
         match = EPICS_ENV_SET_RE.match(line)
         if match is None:
             continue
-        os.environ.setdefault(match.group("name"), match.group("value"))
+        os.environ[match.group("name")] = match.group("value")
+
+
+def log_epics_network_config(run_options: dict) -> None:
+    names = [
+        "EPICS_CA_AUTO_ADDR_LIST",
+        "EPICS_CA_ADDR_LIST",
+        "EPICS_CAS_AUTO_BEACON_ADDR_LIST",
+        "EPICS_CAS_BEACON_ADDR_LIST",
+        "EPICS_CAS_INTF_ADDR_LIST",
+    ]
+    for name in names:
+        LOG.warning("%s=%s", name, os.environ.get(name, ""))
+    LOG.warning("caproto server interfaces=%s", run_options.get("interfaces"))
 
 
 class SmaractHomeIOC(PVGroup):
@@ -175,6 +190,8 @@ def parse_ioc_args():
 def main() -> None:
     load_epics_netsetup()
     ioc_options, run_options = parse_ioc_args()
+    run_options["interfaces"] = ["0.0.0.0"]
+    log_epics_network_config(run_options)
     prefix = ioc_options["prefix"]
     ioc = SmaractHomeIOC(prefix=prefix)
     run(ioc.pvdb, **run_options)

@@ -37,7 +37,7 @@ def test_load_epics_netsetup_reads_epics_env_set_lines(tmp_path, monkeypatch):
     assert os.environ["EPICS_CAS_INTF_ADDR_LIST"] == "10.67.91.169"
 
 
-def test_load_epics_netsetup_keeps_existing_environment(tmp_path, monkeypatch):
+def test_load_epics_netsetup_overwrites_existing_environment(tmp_path, monkeypatch):
     netsetup = tmp_path / "netsetup.cmd"
     netsetup.write_text(
         'epicsEnvSet("EPICS_CA_ADDR_LIST", "10.67.91.255")',
@@ -47,7 +47,7 @@ def test_load_epics_netsetup_keeps_existing_environment(tmp_path, monkeypatch):
 
     load_epics_netsetup(str(netsetup))
 
-    assert os.environ["EPICS_CA_ADDR_LIST"] == "192.0.2.255"
+    assert os.environ["EPICS_CA_ADDR_LIST"] == "10.67.91.255"
 
 
 def test_load_epics_netsetup_ignores_missing_file(tmp_path):
