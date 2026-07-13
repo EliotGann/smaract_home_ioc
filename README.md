@@ -87,6 +87,18 @@ pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 - `XF:12IDC-ES:SMARACT_HOME:StallTolerance`: readback change below this is treated as unchanged.
 - `XF:12IDC-ES:SMARACT_HOME:MotionStartTimeout`: grace period for `.DMOV/.MOVN` to show motion before accepting an already-done command.
 
+## CS-Studio Display
+
+`opi/smaract_home.opi` is a standalone CS-Studio BOY display intended to live in an operator CSS workspace, not on the IOC server.
+
+Default macros are included in the file:
+
+- `P=XF:12IDC-ES:SMARACT_HOME:`
+- `X_MOTOR=XF:12ID2C-ES{MCS:2-Ax:3}Mtr`
+- `WBSX_MOTOR=XF:12ID2C-ES{MCS:2-Ax:1}Mtr`
+
+Override these macros from CSS if using a test IOC prefix or alternate motor records. The display provides `Arm`, `HomeX`, `HomeWBSX`, and `Abort` controls, routine status/error readbacks, homing configuration fields, and live motor record indicators for readback, done, limits, limit violation, and controller enable.
+
 ## Test
 
 ```bash

@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display typeId="org.csstudio.opibuilder.Display" version="1.0.0">
+  <macros>
+    <include_parent_macros>true</include_parent_macros>
+    <P>XF:12IDC-ES:SMARACT_HOME:</P>
+    <X_MOTOR>XF:12ID2C-ES{MCS:2-Ax:3}Mtr</X_MOTOR>
+    <WBSX_MOTOR>XF:12ID2C-ES{MCS:2-Ax:1}Mtr</WBSX_MOTOR>
+  </macros>
+  <name>SmarAct Home IOC</name>
+  <width>900</width>
+  <height>600</height>
+  <background_color>
+    <color red="245" green="247" blue="250" />
+  </background_color>
+  <show_close_button>true</show_close_button>
+  <grid_space>6</grid_space>
+  <show_grid>false</show_grid>
+  <snap_to_geometry>true</snap_to_geometry>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>Title</name>
+    <x>20</x>
+    <y>14</y>
+    <width>420</width>
+    <height>34</height>
+    <text>SmarAct Homing</text>
+    <font>
+      <fontdata fontName="Liberation Sans" height="22" style="1" />
+    </font>
+    <foreground_color>
+      <color red="18" green="43" blue="75" />
+    </foreground_color>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>PrefixLabel</name>
+    <x>20</x>
+    <y>52</y>
+    <width>860</width>
+    <height>22</height>
+    <text>IOC prefix: $(P)</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>StateHeader</name>
+    <x>20</x>
+    <y>92</y>
+    <width>150</width>
+    <height>24</height>
+    <text>Routine State</text>
+    <font>
+      <fontdata fontName="Liberation Sans" height="13" style="1" />
+    </font>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>Busy</name>
+    <x>20</x>
+    <y>126</y>
+    <width>32</width>
+    <height>32</height>
+    <pv_name>$(P)Busy</pv_name>
+    <on_color>
+      <color red="255" green="177" blue="66" />
+    </on_color>
+    <off_color>
+      <color red="150" green="164" blue="179" />
+    </off_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>BusyLabel</name>
+    <x>58</x>
+    <y>132</y>
+    <width>60</width>
+    <height>22</height>
+    <text>Busy</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>StatusLabel</name>
+    <x>140</x>
+    <y>128</y>
+    <width>60</width>
+    <height>22</height>
+    <text>Status</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>Status</name>
+    <x>205</x>
+    <y>124</y>
+    <width>220</width>
+    <height>30</height>
+    <pv_name>$(P)Status</pv_name>
+    <format_type>4</format_type>
+    <border_style>1</border_style>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>ActiveAxisLabel</name>
+    <x>455</x>
+    <y>128</y>
+    <width>90</width>
+    <height>22</height>
+    <text>Active axis</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>ActiveAxis</name>
+    <x>550</x>
+    <y>124</y>
+    <width>120</width>
+    <height>30</height>
+    <pv_name>$(P)ActiveAxis</pv_name>
+    <format_type>4</format_type>
+    <border_style>1</border_style>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.BoolButton" version="1.0.0">
+    <name>Arm</name>
+    <x>700</x>
+    <y>120</y>
+    <width>80</width>
+    <height>40</height>
+    <pv_name>$(P)Arm</pv_name>
+    <on_label>ARMED</on_label>
+    <off_label>ARM</off_label>
+    <toggle_button>true</toggle_button>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0.0">
+    <name>Abort</name>
+    <x>800</x>
+    <y>120</y>
+    <width>80</width>
+    <height>40</height>
+    <text>Abort</text>
+    <actions hook="false" hook_all="false">
+      <action type="WRITE_PV">
+        <pv_name>$(P)Abort</pv_name>
+        <value>1</value>
+        <description>Abort homing</description>
+      </action>
+    </actions>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>MessageLabel</name>
+    <x>20</x>
+    <y>178</y>
+    <width>80</width>
+    <height>22</height>
+    <text>Message</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>Message</name>
+    <x>105</x>
+    <y>174</y>
+    <width>775</width>
+    <height>30</height>
+    <pv_name>$(P)Message</pv_name>
+    <format_type>4</format_type>
+    <border_style>1</border_style>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XHeader</name>
+    <x>20</x>
+    <y>240</y>
+    <width>400</width>
+    <height>24</height>
+    <text>piezo.x  $(X_MOTOR)</text>
+    <font>
+      <fontdata fontName="Liberation Sans" height="13" style="1" />
+    </font>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XHomePositionLabel</name>
+    <x>20</x>
+    <y>278</y>
+    <width>115</width>
+    <height>22</height>
+    <text>Home position</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>XHomePosition</name>
+    <x>140</x>
+    <y>274</y>
+    <width>120</width>
+    <height>28</height>
+    <pv_name>$(P)X:HomePosition</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XNegativeTargetLabel</name>
+    <x>20</x>
+    <y>316</y>
+    <width>115</width>
+    <height>22</height>
+    <text>Negative target</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>XNegativeTarget</name>
+    <x>140</x>
+    <y>312</y>
+    <width>120</width>
+    <height>28</height>
+    <pv_name>$(P)X:NegativeTarget</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XReadbackLabel</name>
+    <x>285</x>
+    <y>278</y>
+    <width>45</width>
+    <height>22</height>
+    <text>RBV</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>XReadback</name>
+    <x>330</x>
+    <y>274</y>
+    <width>90</width>
+    <height>28</height>
+    <pv_name>$(X_MOTOR).RBV</pv_name>
+    <format_type>0</format_type>
+    <border_style>1</border_style>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XDoneLabel</name>
+    <x>285</x>
+    <y>316</y>
+    <width>45</width>
+    <height>22</height>
+    <text>DMOV</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>XDone</name>
+    <x>340</x>
+    <y>314</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(X_MOTOR).DMOV</pv_name>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>XLimitLabels</name>
+    <x>20</x>
+    <y>356</y>
+    <width>320</width>
+    <height>22</height>
+    <text>LLS        HLS        LVIO       CNEN</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>XLimitLow</name>
+    <x>22</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(X_MOTOR).LLS</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>XLimitHigh</name>
+    <x>100</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(X_MOTOR).HLS</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>XLvio</name>
+    <x>180</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(X_MOTOR).LVIO</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>XEnabled</name>
+    <x>260</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(X_MOTOR).CNEN</pv_name>
+    <on_color><color red="82" green="174" blue="93" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0.0">
+    <name>HomeX</name>
+    <x>20</x>
+    <y>430</y>
+    <width>180</width>
+    <height>38</height>
+    <text>Home piezo.x</text>
+    <actions hook="false" hook_all="false">
+      <action type="WRITE_PV">
+        <pv_name>$(P)HomeX</pv_name>
+        <value>1</value>
+        <description>Start piezo.x homing</description>
+      </action>
+    </actions>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXHeader</name>
+    <x>470</x>
+    <y>240</y>
+    <width>410</width>
+    <height>24</height>
+    <text>WAXS beamstop X  $(WBSX_MOTOR)</text>
+    <font>
+      <fontdata fontName="Liberation Sans" height="13" style="1" />
+    </font>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXHomePositionLabel</name>
+    <x>470</x>
+    <y>278</y>
+    <width>115</width>
+    <height>22</height>
+    <text>Home position</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>WBSXHomePosition</name>
+    <x>590</x>
+    <y>274</y>
+    <width>120</width>
+    <height>28</height>
+    <pv_name>$(P)WBSX:HomePosition</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXNegativeTargetLabel</name>
+    <x>470</x>
+    <y>316</y>
+    <width>115</width>
+    <height>22</height>
+    <text>Negative target</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>WBSXNegativeTarget</name>
+    <x>590</x>
+    <y>312</y>
+    <width>120</width>
+    <height>28</height>
+    <pv_name>$(P)WBSX:NegativeTarget</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXReadbackLabel</name>
+    <x>735</x>
+    <y>278</y>
+    <width>45</width>
+    <height>22</height>
+    <text>RBV</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>WBSXReadback</name>
+    <x>780</x>
+    <y>274</y>
+    <width>90</width>
+    <height>28</height>
+    <pv_name>$(WBSX_MOTOR).RBV</pv_name>
+    <format_type>0</format_type>
+    <border_style>1</border_style>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXDoneLabel</name>
+    <x>735</x>
+    <y>316</y>
+    <width>45</width>
+    <height>22</height>
+    <text>DMOV</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>WBSXDone</name>
+    <x>790</x>
+    <y>314</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(WBSX_MOTOR).DMOV</pv_name>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>WBSXLimitLabels</name>
+    <x>470</x>
+    <y>356</y>
+    <width>320</width>
+    <height>22</height>
+    <text>LLS        HLS        LVIO       CNEN</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>WBSXLimitLow</name>
+    <x>472</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(WBSX_MOTOR).LLS</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>WBSXLimitHigh</name>
+    <x>550</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(WBSX_MOTOR).HLS</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>WBSXLvio</name>
+    <x>630</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(WBSX_MOTOR).LVIO</pv_name>
+    <on_color><color red="222" green="65" blue="58" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.LED" version="1.0.0">
+    <name>WBSXEnabled</name>
+    <x>710</x>
+    <y>382</y>
+    <width>26</width>
+    <height>26</height>
+    <pv_name>$(WBSX_MOTOR).CNEN</pv_name>
+    <on_color><color red="82" green="174" blue="93" /></on_color>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0.0">
+    <name>HomeWBSX</name>
+    <x>470</x>
+    <y>430</y>
+    <width>180</width>
+    <height>38</height>
+    <text>Home WBS X</text>
+    <actions hook="false" hook_all="false">
+      <action type="WRITE_PV">
+        <pv_name>$(P)HomeWBSX</pv_name>
+        <value>1</value>
+        <description>Start WAXS beamstop X homing</description>
+      </action>
+    </actions>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>TimingHeader</name>
+    <x>20</x>
+    <y>504</y>
+    <width>100</width>
+    <height>22</height>
+    <text>Timing</text>
+    <font>
+      <fontdata fontName="Liberation Sans" height="12" style="1" />
+    </font>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>StallSecondsLabel</name>
+    <x>120</x>
+    <y>504</y>
+    <width>78</width>
+    <height>22</height>
+    <text>Stall sec</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>StallSeconds</name>
+    <x>200</x>
+    <y>500</y>
+    <width>75</width>
+    <height>28</height>
+    <pv_name>$(P)StallSeconds</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>StallToleranceLabel</name>
+    <x>300</x>
+    <y>504</y>
+    <width>78</width>
+    <height>22</height>
+    <text>Stall tol</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>StallTolerance</name>
+    <x>382</x>
+    <y>500</y>
+    <width>75</width>
+    <height>28</height>
+    <pv_name>$(P)StallTolerance</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>MotionStartLabel</name>
+    <x>482</x>
+    <y>504</y>
+    <width>95</width>
+    <height>22</height>
+    <text>Motion start</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>MotionStartTimeout</name>
+    <x>582</x>
+    <y>500</y>
+    <width>75</width>
+    <height>28</height>
+    <pv_name>$(P)MotionStartTimeout</pv_name>
+    <format_type>0</format_type>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>LastErrorLabel</name>
+    <x>20</x>
+    <y>548</y>
+    <width>80</width>
+    <height>22</height>
+    <text>Last error</text>
+    <transparent>true</transparent>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>LastError</name>
+    <x>105</x>
+    <y>544</y>
+    <width>775</width>
+    <height>30</height>
+    <pv_name>$(P)LastError</pv_name>
+    <format_type>4</format_type>
+    <border_style>1</border_style>
+    <foreground_color>
+      <color red="178" green="34" blue="34" />
+    </foreground_color>
+  </widget>
+</display>
