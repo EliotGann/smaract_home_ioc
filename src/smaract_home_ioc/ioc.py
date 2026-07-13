@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from threading import Event
 
 from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run
@@ -13,6 +14,24 @@ from .routine import AxisConfig, HomeState, RoutineConfig, SmaractHomer
 DEFAULT_IOC_PREFIX = "XF:12IDC-ES:SMARACT_HOME:"
 DEFAULT_X_PREFIX = "XF:12ID2C-ES{MCS:2-Ax:3}Mtr"
 DEFAULT_WBSX_PREFIX = "XF:12ID2C-ES{MCS:2-Ax:1}Mtr"
+DEFAULT_NETSETUP_FILE = "/epics/common/xf12id2-inst-ioc1-netsetup.cmd"
+EPICS_ENV_SET_RE = re.compile(
+    r'^\s*epicsEnvSet\(\s*"(?P<name>[^"]+)"\s*,\s*"(?P<value>[^"]*)"\s*\)'
+)
+
+
+def load_epics_netsetup(path: str = DEFAULT_NETSETUP_FILE) -> None:
+    try:
+        with open(path, encoding="utf-8") as netsetup:
+            lines = netsetup.readlines()
+    except FileNotFoundError:
+        return
+
+    for line in lines:
+        match = EPICS_ENV_SET_RE.match(line)
+        if match is None:
+            continue
+        os.environ.setdefault(match.group("name"), match.group("value"))
 
 
 class SmaractHomeIOC(PVGroup):
@@ -154,6 +173,7 @@ def parse_ioc_args():
 
 
 def main() -> None:
+    load_epics_netsetup()
     ioc_options, run_options = parse_ioc_args()
     prefix = ioc_options["prefix"]
     ioc = SmaractHomeIOC(prefix=prefix)

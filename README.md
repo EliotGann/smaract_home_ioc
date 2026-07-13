@@ -33,6 +33,15 @@ The negative target and stall-detection parameters should be tuned carefully dur
 pixi run ioc
 ```
 
+On IOC hosts, startup reads EPICS environment settings from:
+
+```text
+/epics/common/xf12id2-inst-ioc1-netsetup.cmd
+```
+
+Any `epicsEnvSet("NAME", "VALUE")` lines in that file are applied before caproto
+starts, unless `NAME` is already set in the process environment.
+
 If local workstation networking blocks EPICS broadcast beacons, run with the local task:
 
 ```bash
