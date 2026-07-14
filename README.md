@@ -77,6 +77,7 @@ pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 - `XF:12IDC-ES:SMARACT_HOME:Busy`: `1` while a routine is active.
 - `XF:12IDC-ES:SMARACT_HOME:ActiveAxis`: active axis name.
 - `XF:12IDC-ES:SMARACT_HOME:Status`: current state.
+- `XF:12IDC-ES:SMARACT_HOME:StatusCode`: numeric state: `0` idle, `1` checking, `2` finding_negative_limit, `3` finding_home, `4` setting_position, `5` moving_to_zero, `6` homed, `7` aborted, `8` error.
 - `XF:12IDC-ES:SMARACT_HOME:Message`: current detail message.
 - `XF:12IDC-ES:SMARACT_HOME:LastError`: last error message.
 - `XF:12IDC-ES:SMARACT_HOME:X:HomePosition`: current-position value applied after `x` home-forward.

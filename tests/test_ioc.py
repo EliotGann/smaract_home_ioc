@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from smaract_home_ioc import ioc as ioc_module
 from smaract_home_ioc.ioc import load_epics_netsetup
+from smaract_home_ioc.routine import HOME_STATE_CODES, HomeState
 
 
 def test_load_epics_netsetup_reads_epics_env_set_lines(tmp_path, monkeypatch):
@@ -52,6 +53,20 @@ def test_load_epics_netsetup_overwrites_existing_environment(tmp_path, monkeypat
 
 def test_load_epics_netsetup_ignores_missing_file(tmp_path):
     load_epics_netsetup(str(tmp_path / "missing.cmd"))
+
+
+def test_home_state_codes_are_stable():
+    assert HOME_STATE_CODES == {
+        HomeState.IDLE: 0,
+        HomeState.CHECKING: 1,
+        HomeState.FINDING_NEGATIVE_LIMIT: 2,
+        HomeState.FINDING_HOME: 3,
+        HomeState.SETTING_POSITION: 4,
+        HomeState.MOVING_TO_ZERO: 5,
+        HomeState.HOMED: 6,
+        HomeState.ABORTED: 7,
+        HomeState.ERROR: 8,
+    }
 
 
 def test_main_loads_netsetup_before_parsing_ioc_args():

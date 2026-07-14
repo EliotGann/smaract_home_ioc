@@ -9,7 +9,7 @@ from threading import Event
 from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run
 
 from .epics_client import EpicsPVClient
-from .routine import AxisConfig, HomeState, RoutineConfig, SmaractHomer
+from .routine import HOME_STATE_CODES, AxisConfig, HomeState, RoutineConfig, SmaractHomer
 
 
 DEFAULT_IOC_PREFIX = "XF:12IDC-ES:SMARACT_HOME:"
@@ -58,6 +58,12 @@ class SmaractHomeIOC(PVGroup):
     busy = pvproperty(name="Busy", value=0, dtype=int, read_only=True)
     active_axis = pvproperty(name="ActiveAxis", value="", dtype=str, read_only=True)
     status = pvproperty(name="Status", value=HomeState.IDLE.value, dtype=str, read_only=True)
+    status_code = pvproperty(
+        name="StatusCode",
+        value=HOME_STATE_CODES[HomeState.IDLE],
+        dtype=int,
+        read_only=True,
+    )
     message = pvproperty(name="Message", value="idle", dtype=str, read_only=True)
     last_error = pvproperty(name="LastError", value="", dtype=str, read_only=True)
 
@@ -172,10 +178,12 @@ class SmaractHomeIOC(PVGroup):
 
     async def _write_message(self, state: HomeState, message: str) -> None:
         await self.status.write(state.value)
+        await self.status_code.write(HOME_STATE_CODES[state])
         await self.message.write(message)
 
     async def _write_error(self, message: str) -> None:
         await self.status.write(HomeState.ERROR.value)
+        await self.status_code.write(HOME_STATE_CODES[HomeState.ERROR])
         await self.message.write(message)
         await self.last_error.write(message)
 

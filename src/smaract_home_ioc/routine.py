@@ -19,6 +19,19 @@ class HomeState(str, Enum):
     ERROR = "error"
 
 
+HOME_STATE_CODES = {
+    HomeState.IDLE: 0,
+    HomeState.CHECKING: 1,
+    HomeState.FINDING_NEGATIVE_LIMIT: 2,
+    HomeState.FINDING_HOME: 3,
+    HomeState.SETTING_POSITION: 4,
+    HomeState.MOVING_TO_ZERO: 5,
+    HomeState.HOMED: 6,
+    HomeState.ABORTED: 7,
+    HomeState.ERROR: 8,
+}
+
+
 class PVClient(Protocol):
     def get(self, pv: str, *, timeout: float = 2.0): ...
 
