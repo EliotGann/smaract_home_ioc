@@ -60,10 +60,15 @@ class RoutineConfig:
     stall_tolerance: float = 0.002
     settle_seconds: float = 1.0
     put_timeout: float = 10.0
+    soft_limit_margin: float = 1.0
 
 
 class HomingAborted(RuntimeError):
     """Raised when an operator aborts the routine."""
+
+
+def _fmt_position(position: float) -> str:
+    return f"{position:.12g}"
 
 
 class SmaractHomer:
@@ -80,22 +85,27 @@ class SmaractHomer:
     ) -> HomeState:
         abort_event = abort_event or Event()
         progress = progress or (lambda state, message: None)
+        low_soft_limit = None
 
         try:
             self._check_ready(axis, abort_event, progress)
+            low_soft_limit = self._lower_blocking_low_soft_limit(axis, progress)
             self._find_negative_limit(axis, abort_event, progress)
             self._home_forward(axis, abort_event, progress)
             self._set_current_position(axis, abort_event, progress)
             self._move_to_zero(axis, abort_event, progress)
         except HomingAborted:
             self._stop(axis)
+            self._restore_low_soft_limit(axis, low_soft_limit, progress, suppress_errors=True)
             progress(HomeState.ABORTED, f"{axis.name}: homing aborted")
             return HomeState.ABORTED
         except Exception as exc:
             self._stop(axis)
+            self._restore_low_soft_limit(axis, low_soft_limit, progress, suppress_errors=True)
             progress(HomeState.ERROR, f"{axis.name}: {exc}")
             raise
 
+        self._restore_low_soft_limit(axis, low_soft_limit, progress)
         progress(HomeState.HOMED, f"{axis.name}: homed and moved to 0")
         return HomeState.HOMED
 
@@ -144,6 +154,61 @@ class SmaractHomer:
             raise RuntimeError(f"{axis.name}: high-limit flag is active before homing")
         if self._get_int(self._pv(axis, "LLS"), default=0) != 0:
             raise RuntimeError(f"{axis.name}: low-limit flag is active before homing")
+
+    def low_soft_limit_warning(self, axis: AxisConfig) -> str | None:
+        low_soft_limit = self._get_float(self._pv(axis, "LLM"))
+        if low_soft_limit < axis.negative_target:
+            return None
+        temporary_limit = self._temporary_low_soft_limit(axis)
+        return (
+            f"{axis.name}: low soft limit .LLM={_fmt_position(low_soft_limit)} is not below "
+            f"NegativeTarget={_fmt_position(axis.negative_target)}; homing will temporarily lower .LLM "
+            f"to {_fmt_position(temporary_limit)}"
+        )
+
+    def _temporary_low_soft_limit(self, axis: AxisConfig) -> float:
+        return axis.negative_target - abs(self.config.soft_limit_margin)
+
+    def _lower_blocking_low_soft_limit(
+        self,
+        axis: AxisConfig,
+        progress: ProgressCallback,
+    ) -> float | None:
+        low_soft_limit = self._get_float(self._pv(axis, "LLM"))
+        if low_soft_limit < axis.negative_target:
+            return None
+
+        temporary_limit = self._temporary_low_soft_limit(axis)
+        progress(
+            HomeState.CHECKING,
+            f"{axis.name}: temporarily lowering low soft limit .LLM from {_fmt_position(low_soft_limit)} "
+            f"to {_fmt_position(temporary_limit)} so "
+            f"NegativeTarget={_fmt_position(axis.negative_target)} is permitted",
+        )
+        self._put(self._pv(axis, "LLM"), temporary_limit, wait=True)
+        return low_soft_limit
+
+    def _restore_low_soft_limit(
+        self,
+        axis: AxisConfig,
+        low_soft_limit: float | None,
+        progress: ProgressCallback,
+        *,
+        suppress_errors: bool = False,
+    ) -> None:
+        if low_soft_limit is None:
+            return
+
+        try:
+            progress(
+                HomeState.CHECKING,
+                f"{axis.name}: restoring low soft limit .LLM to {_fmt_position(low_soft_limit)}",
+            )
+            self._put(self._pv(axis, "LLM"), low_soft_limit, wait=True)
+        except Exception as exc:
+            if not suppress_errors:
+                raise
+            progress(HomeState.ERROR, f"{axis.name}: failed to restore low soft limit .LLM: {exc}")
 
     def _find_negative_limit(self, axis: AxisConfig, abort_event: Event, progress: ProgressCallback) -> None:
         progress(

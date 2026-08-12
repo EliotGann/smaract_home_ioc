@@ -108,6 +108,13 @@ class SmaractHomeIOC(PVGroup):
             await self._write_message(HomeState.ABORTED, "abort requested")
         return 0
 
+    @arm.putter
+    async def arm(self, instance, value):
+        value = int(value)
+        if value == 1:
+            await self._warn_blocking_low_soft_limits()
+        return value
+
     async def _start_home(self, axis_name: str) -> None:
         if self._task is not None and not self._task.done():
             await self._write_error(f"cannot start {axis_name}: another homing routine is active")
@@ -148,6 +155,22 @@ class SmaractHomeIOC(PVGroup):
             stall_tolerance=float(self.stall_tolerance.value),
             settle_seconds=float(self.settle_seconds.value),
         )
+
+    async def _warn_blocking_low_soft_limits(self) -> None:
+        homer = SmaractHomer(self._client, self._routine_config())
+        warnings = []
+        for axis_name in ("x", "wbsx"):
+            axis = self._axis_config(axis_name)
+            try:
+                warning = homer.low_soft_limit_warning(axis)
+            except Exception as exc:
+                LOG.warning("could not check %s low soft limit before arming: %s", axis_name, exc)
+                continue
+            if warning is not None:
+                warnings.append(warning)
+
+        if warnings:
+            await self._write_message(HomeState.CHECKING, "; ".join(warnings))
 
     async def _run_home(self, axis_name: str) -> None:
         loop = asyncio.get_running_loop()

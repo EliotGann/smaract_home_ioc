@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from unittest.mock import patch
 
 from smaract_home_ioc import ioc as ioc_module
-from smaract_home_ioc.ioc import load_epics_netsetup
+from smaract_home_ioc.ioc import DEFAULT_X_PREFIX, SmaractHomeIOC, load_epics_netsetup
 from smaract_home_ioc.routine import HOME_STATE_CODES, HomeState
 
 
@@ -67,6 +68,31 @@ def test_home_state_codes_are_stable():
         HomeState.ABORTED: 7,
         HomeState.ERROR: 8,
     }
+
+
+def test_arm_warns_when_low_soft_limit_blocks_negative_target():
+    ioc = SmaractHomeIOC(prefix="TEST:")
+    values = {
+        f"{DEFAULT_X_PREFIX}.LLM": -100.0,
+        f"{ioc.wbsx_motor_prefix.value}.LLM": -2000000.0,
+    }
+
+    class Client:
+        def get(self, pv, *, timeout=2.0):
+            return values[pv]
+
+        def put(self, pv, value, *, wait=False, timeout=10.0):
+            values[pv] = value
+
+    ioc._client = Client()
+
+    asyncio.run(ioc.arm.write(1))
+
+    assert ioc.arm.value == 1
+    assert ioc.message.value == (
+        "x: low soft limit .LLM=-100 is not below NegativeTarget=-1000000; "
+        "homing will temporarily lower .LLM to -1000001"
+    )
 
 
 def test_main_loads_netsetup_before_parsing_ioc_args():

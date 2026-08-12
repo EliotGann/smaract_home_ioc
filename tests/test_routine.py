@@ -51,6 +51,7 @@ def ready_client(prefix="MTR"):
 
 def test_home_axis_sequence_sets_reference_and_moves_to_zero():
     client = ready_client()
+    client.values["MTR.LLM"] = -2000000.0
     client.rbv_values = [10.0, 9.0]
     client.limit_after_reads = 2
     axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
@@ -80,6 +81,70 @@ def test_home_axis_sequence_sets_reference_and_moves_to_zero():
     assert ("MTR.SET", 0, True) in client.puts
     assert client.puts[-1] == ("MTR.VAL", 0.0, False)
     assert states[-1] == HomeState.HOMED
+
+
+def test_home_axis_temporarily_lowers_blocking_low_soft_limit():
+    client = ready_client()
+    client.values["MTR.LLM"] = -100.0
+    client.rbv_values = [10.0, 9.0]
+    client.limit_after_reads = 2
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
+    config = RoutineConfig(
+        search_timeout=2.0,
+        home_timeout=2.0,
+        move_timeout=2.0,
+        motion_start_timeout=0.0,
+        poll_period=0.0,
+        stall_seconds=0.0,
+        stall_tolerance=0.001,
+        settle_seconds=0.0,
+    )
+    messages = []
+
+    state = SmaractHomer(client, config).home_axis(
+        axis,
+        progress=lambda state, message: messages.append(message),
+    )
+
+    assert state == HomeState.HOMED
+    assert client.puts.index(("MTR.LLM", -1000001.0, True)) < client.puts.index(
+        ("MTR.VAL", -1000000.0, False)
+    )
+    assert client.puts.index(("MTR.VAL", 0.0, False)) < client.puts.index(("MTR.LLM", -100.0, True))
+    assert client.values["MTR.LLM"] == -100.0
+    assert any("temporarily lowering low soft limit" in message for message in messages)
+    assert any("restoring low soft limit" in message for message in messages)
+
+
+def test_low_soft_limit_warning_reports_blocking_limit():
+    client = ready_client()
+    client.values["MTR.LLM"] = -100.0
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
+
+    warning = SmaractHomer(client).low_soft_limit_warning(axis)
+
+    assert warning is not None
+    assert "low soft limit .LLM=-100 is not below" in warning
+    assert "temporarily lower .LLM to -1000001" in warning
+
+
+def test_low_soft_limit_warning_allows_limit_less_than_target():
+    client = ready_client()
+    client.values["MTR.LLM"] = -2000000.0
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
+
+    assert SmaractHomer(client).low_soft_limit_warning(axis) is None
+
+
+def test_low_soft_limit_warning_reports_limit_equal_to_target():
+    client = ready_client()
+    client.values["MTR.LLM"] = -1000000.0
+    axis = AxisConfig("x", "MTR", home_position=-50000.0, negative_target=-1000000.0)
+
+    warning = SmaractHomer(client).low_soft_limit_warning(axis)
+
+    assert warning is not None
+    assert "low soft limit .LLM=-1000000 is not below" in warning
 
 
 def test_refuses_motor_alarm():
