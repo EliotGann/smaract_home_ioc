@@ -82,6 +82,7 @@ class SmaractHomeIOC(PVGroup):
     stall_seconds = pvproperty(name="StallSeconds", value=5.0)
     stall_tolerance = pvproperty(name="StallTolerance", value=0.002)
     settle_seconds = pvproperty(name="SettleSeconds", value=1.0)
+    post_home_monitor_seconds = pvproperty(name="PostHomeMonitorSeconds", value=20.0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -91,18 +92,39 @@ class SmaractHomeIOC(PVGroup):
 
     @home_x.putter
     async def home_x(self, instance, value):
+        LOG.warning(
+            "HomeX put value=%r arm=%r busy=%r active_axis=%r",
+            value,
+            self.arm.value,
+            self.busy.value,
+            self.active_axis.value,
+        )
         if int(value) != 0:
             await self._start_home("x")
         return 0
 
     @home_wbsx.putter
     async def home_wbsx(self, instance, value):
+        LOG.warning(
+            "HomeWBSX put value=%r arm=%r busy=%r active_axis=%r",
+            value,
+            self.arm.value,
+            self.busy.value,
+            self.active_axis.value,
+        )
         if int(value) != 0:
             await self._start_home("wbsx")
         return 0
 
     @abort.putter
     async def abort(self, instance, value):
+        LOG.warning(
+            "Abort put value=%r arm=%r busy=%r active_axis=%r",
+            value,
+            self.arm.value,
+            self.busy.value,
+            self.active_axis.value,
+        )
         if int(value) != 0:
             self._abort_event.set()
             await self._write_message(HomeState.ABORTED, "abort requested")
@@ -110,12 +132,28 @@ class SmaractHomeIOC(PVGroup):
 
     @arm.putter
     async def arm(self, instance, value):
+        LOG.warning(
+            "Arm put value=%r current_arm=%r busy=%r active_axis=%r",
+            value,
+            self.arm.value,
+            self.busy.value,
+            self.active_axis.value,
+        )
         value = int(value)
         if value == 1:
             await self._warn_blocking_low_soft_limits()
         return value
 
     async def _start_home(self, axis_name: str) -> None:
+        LOG.warning(
+            "home requested for %s arm=%r busy=%r active_axis=%r task=%r task_done=%r",
+            axis_name,
+            self.arm.value,
+            self.busy.value,
+            self.active_axis.value,
+            self._task,
+            None if self._task is None else self._task.done(),
+        )
         if self._task is not None and not self._task.done():
             await self._write_error(f"cannot start {axis_name}: another homing routine is active")
             return
@@ -178,6 +216,24 @@ class SmaractHomeIOC(PVGroup):
         config = self._routine_config()
         homer = SmaractHomer(self._client, config)
 
+        LOG.warning(
+            "home run configured axis=%s motor_prefix=%s home_position=%s negative_target=%s "
+            "search_timeout=%s home_timeout=%s move_timeout=%s motion_start_timeout=%s "
+            "poll_period=%s stall_seconds=%s stall_tolerance=%s settle_seconds=%s",
+            axis.name,
+            axis.motor_prefix,
+            axis.home_position,
+            axis.negative_target,
+            config.search_timeout,
+            config.home_timeout,
+            config.move_timeout,
+            config.motion_start_timeout,
+            config.poll_period,
+            config.stall_seconds,
+            config.stall_tolerance,
+            config.settle_seconds,
+        )
+
         await self.busy.write(1)
         await self.active_axis.write(axis_name)
         await self._write_message(HomeState.CHECKING, f"{axis_name}: starting")
@@ -186,18 +242,44 @@ class SmaractHomeIOC(PVGroup):
             asyncio.run_coroutine_threadsafe(self._write_message(state, message), loop)
 
         try:
+            LOG.warning("home starting for %s", axis_name)
             await asyncio.to_thread(
                 homer.home_axis,
                 axis,
                 abort_event=self._abort_event,
                 progress=progress,
             )
+            LOG.warning("home routine returned successfully for %s", axis_name)
         except Exception as exc:
+            LOG.exception("home routine raised for %s", axis_name)
             await self._write_error(str(exc))
         finally:
+            LOG.warning(
+                "home finished for %s; disarming IOC current status=%r message=%r last_error=%r",
+                axis_name,
+                self.status.value,
+                self.message.value,
+                self.last_error.value,
+            )
             await self.busy.write(0)
             await self.active_axis.write("")
             await self.arm.write(0)
+            LOG.warning(
+                "home cleanup complete for %s arm=%r busy=%r active_axis=%r status=%r message=%r",
+                axis_name,
+                self.arm.value,
+                self.busy.value,
+                self.active_axis.value,
+                self.status.value,
+                self.message.value,
+            )
+            await asyncio.to_thread(
+                homer.monitor_axis,
+                axis,
+                "post-home",
+                duration=float(self.post_home_monitor_seconds.value),
+                period=max(float(self.poll_period.value), 0.25),
+            )
 
     async def _write_message(self, state: HomeState, message: str) -> None:
         await self.status.write(state.value)

@@ -27,6 +27,34 @@ Defaults:
 
 The negative target and stall-detection parameters should be tuned carefully during local testing.
 
+## Motion-completion logic
+
+Each commanded motor step (negative search, home-forward, set-position, move-to-zero) waits for genuine confirmation before advancing:
+
+- **Observed motion then settled** (`DMOV=1`, `MOVN=0` after `DMOV=0` or `MOVN=1` was seen): the primary completion signal for all steps.
+- **Already at target (no-op)**: for set-position and move-to-zero, if `RBV` is already within the motor record deadband (`.RDBD`) of the commanded target the step is treated as a no-op and the routine advances immediately.
+- **Home-forward (`HOMF`) requires observed motion**: `HOMF` must cause `DMOV=0` or `MOVN=1` before the routine declares the referencing done. If the controller never starts moving within `HomeTimeout`, the routine errors and stops. This prevents the routine from silently racing ahead while the real referencing move runs after the IOC reports homed.
+- **Negative-search motion guard**: the initial negative move must show motion within `MotionStartTimeout`. If it does not, the routine errors and stops rather than declaring the negative stop immediately reached.
+
+## Known external interaction with c3mc9
+
+The `c3mc9` IOC (`/epics/iocs/c3mc9`) monitors `XF:12IDC-ES:SMARACT_HOME:StatusCode` and uses a transition to code `6` (homed) as a gate to start continuous position tracking of `XF:12ID2C-ES{MCS:2-Ax:3}Mtr` via `platform_move_x_axis.db`. This is intentional for sample-exchange workflows initiated by `c3mc9`, but it also fires when any other client or operator homes the axis independently.
+
+If unexpected negative motion of Ax:3 occurs after a manual or maintenance homing, check whether `c3mc9` is running and whether its `xf12id2_smaract_homed` latch became non-zero. See the bug report in the `c3mc9` repository for the recommended fix (own-workflow latch).
+
+## Logging
+
+The IOC logs at `WARNING` level throughout the homing sequence. Key log lines:
+
+- `HomeX put value=...` / `Arm put value=...`: every write to a control PV, with current arm/busy/axis state.
+- `home requested for ...`: entry into `_start_home`, with task state.
+- `home run configured ...`: full axis and timing configuration at start.
+- `home starting for ...` / `home routine returned successfully for ...` / `home finished for ...`: routine lifecycle.
+- `motor command: caput ...`: every motor record write this IOC issues.
+- `... before/after caput ...` snapshots: full motor record snapshot (`VAL`, `RBV`, `DMOV`, `MOVN`, `MSTA`, `SET`, `OFF`, `LLS`, `HLS`, `LVIO`, `LLM`, `HLM`, `HOMF`, `HOMR`, etc.) before and after each command.
+- `... wait_done state=... elapsed=...`: every status change during each wait loop.
+- `post-home monitor elapsed=...`: motor snapshots for `PostHomeMonitorSeconds` seconds after disarm, to catch any unexpected post-completion motion.
+
 ## Run Locally
 
 ```bash
@@ -86,7 +114,8 @@ pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 - `XF:12IDC-ES:SMARACT_HOME:WBSX:NegativeTarget`: target used to search negative stop for WAXS beamstop X.
 - `XF:12IDC-ES:SMARACT_HOME:StallSeconds`: unchanged-readback time required to call the negative stop reached.
 - `XF:12IDC-ES:SMARACT_HOME:StallTolerance`: readback change below this is treated as unchanged.
-- `XF:12IDC-ES:SMARACT_HOME:MotionStartTimeout`: grace period for `.DMOV/.MOVN` to show motion before accepting an already-done command.
+- `XF:12IDC-ES:SMARACT_HOME:MotionStartTimeout`: grace period for `.DMOV/.MOVN` to show motion before erroring on a move that did not start.
+- `XF:12IDC-ES:SMARACT_HOME:PostHomeMonitorSeconds`: how long to keep logging motor snapshots after disarm (default `20.0`; set to `0` to disable).
 
 ## CS-Studio Display
 
