@@ -70,13 +70,46 @@ On IOC hosts, startup reads EPICS environment settings from:
 Any `epicsEnvSet("NAME", "VALUE")` lines in that file are applied before caproto
 starts, unless `NAME` is already set in the process environment.
 
-If local workstation networking blocks EPICS broadcast beacons, run with the local task:
+Network addresses belong in the host's netsetup file or process environment, not
+in this repository. Configure client discovery with `EPICS_CA_ADDR_LIST` and
+`EPICS_CA_AUTO_ADDR_LIST`, and server beacons with `EPICS_CAS_BEACON_ADDR_LIST`
+and `EPICS_CAS_AUTO_BEACON_ADDR_LIST` as appropriate for your deployment.
+
+The former `ioc-local` task has been removed because it embedded a site-specific
+beacon destination. For that workstation workaround, set
+`EPICS_CAS_BEACON_ADDR_LIST` to your deployment's beacon destination and
+`EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO` in the environment, then use the normal task:
 
 ```bash
-pixi run ioc-local --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
+pixi run ioc --prefix XF:12IDC-ES:SMARACT_HOME_TEST:
 ```
 
-This uses `EPICS_CAS_BEACON_ADDR_LIST=10.67.91.255`, matching the SMI workstation CA broadcast address.
+Server bind interfaces follow caproto's `--interfaces` option or
+`EPICS_CAS_INTF_ADDR_LIST`. Without an explicit interface setting, caproto defaults
+to listening on all IPv4 interfaces, not just localhost. Running on a workstation
+or using a test PV prefix does not isolate the IOC from the network or hardware.
+
+### Broadcast Discovery Troubleshooting
+
+With caproto 1.3.0 on this Linux host, binding to the unicast address from
+`EPICS_CAS_INTF_ADDR_LIST` does not receive subnet-broadcast CA searches. A
+temporary workaround is an explicit wildcard bind:
+
+```bash
+pixi run ioc --interfaces 0.0.0.0
+```
+
+The deployed `/epics/iocs/MCS02HOMING/st.cmd` currently uses this override. It
+listens on all IPv4 interfaces; it does not change the configured beacon
+destinations. Remove `--interfaces 0.0.0.0` from that launcher to undo the
+workaround. Do not run a second instance with the production PV prefix while
+the service is running.
+
+For a read-only discovery check, use `caget -w 3
+'XF:12IDC-ES:SMARACT_HOME:Status'` with `EPICS_CA_AUTO_ADDR_LIST=NO` and
+`EPICS_CA_ADDR_LIST` set to the instrument subnet broadcast address. A unicast
+search to the host IP is not a reliable substitute when multiple IOCs share
+UDP port 5064. Beacons do not advertise a list of PV names.
 
 The default IOC prefix is:
 

@@ -4,9 +4,17 @@ import asyncio
 import os
 from unittest.mock import patch
 
+import pytest
+
 from smaract_home_ioc import ioc as ioc_module
 from smaract_home_ioc.ioc import DEFAULT_X_PREFIX, SmaractHomeIOC, load_epics_netsetup
 from smaract_home_ioc.routine import HOME_STATE_CODES, HomeState
+
+
+@pytest.fixture(autouse=True)
+def mock_epics_client():
+    with patch.object(ioc_module, "EpicsPVClient"):
+        yield
 
 
 def test_load_epics_netsetup_reads_epics_env_set_lines(tmp_path, monkeypatch):
@@ -16,9 +24,9 @@ def test_load_epics_netsetup_reads_epics_env_set_lines(tmp_path, monkeypatch):
             [
                 "# Ansible managed",
                 'epicsEnvSet("EPICS_CA_AUTO_ADDR_LIST",          "NO")',
-                'epicsEnvSet("EPICS_CA_ADDR_LIST",               "10.67.91.255")',
-                'epicsEnvSet("EPICS_CAS_BEACON_ADDR_LIST",\t"10.67.91.255")',
-                'epicsEnvSet("EPICS_CAS_INTF_ADDR_LIST",         "10.67.91.169")',
+                'epicsEnvSet("EPICS_CA_ADDR_LIST",               "configured-ca-target")',
+                'epicsEnvSet("EPICS_CAS_BEACON_ADDR_LIST",\t"configured-beacon-target")',
+                'epicsEnvSet("EPICS_CAS_INTF_ADDR_LIST",         "configured-interface")',
             ]
         ),
         encoding="utf-8",
@@ -34,22 +42,22 @@ def test_load_epics_netsetup_reads_epics_env_set_lines(tmp_path, monkeypatch):
     load_epics_netsetup(str(netsetup))
 
     assert os.environ["EPICS_CA_AUTO_ADDR_LIST"] == "NO"
-    assert os.environ["EPICS_CA_ADDR_LIST"] == "10.67.91.255"
-    assert os.environ["EPICS_CAS_BEACON_ADDR_LIST"] == "10.67.91.255"
-    assert os.environ["EPICS_CAS_INTF_ADDR_LIST"] == "10.67.91.169"
+    assert os.environ["EPICS_CA_ADDR_LIST"] == "configured-ca-target"
+    assert os.environ["EPICS_CAS_BEACON_ADDR_LIST"] == "configured-beacon-target"
+    assert os.environ["EPICS_CAS_INTF_ADDR_LIST"] == "configured-interface"
 
 
-def test_load_epics_netsetup_overwrites_existing_environment(tmp_path, monkeypatch):
+def test_load_epics_netsetup_preserves_existing_environment(tmp_path, monkeypatch):
     netsetup = tmp_path / "netsetup.cmd"
     netsetup.write_text(
-        'epicsEnvSet("EPICS_CA_ADDR_LIST", "10.67.91.255")',
+        'epicsEnvSet("EPICS_CA_ADDR_LIST", "netsetup-target")',
         encoding="utf-8",
     )
-    monkeypatch.setenv("EPICS_CA_ADDR_LIST", "192.0.2.255")
+    monkeypatch.setenv("EPICS_CA_ADDR_LIST", "environment-target")
 
     load_epics_netsetup(str(netsetup))
 
-    assert os.environ["EPICS_CA_ADDR_LIST"] == "10.67.91.255"
+    assert os.environ["EPICS_CA_ADDR_LIST"] == "environment-target"
 
 
 def test_load_epics_netsetup_ignores_missing_file(tmp_path):
@@ -121,12 +129,12 @@ def test_arm_ignores_unset_soft_limits():
     assert ioc.message.value == "idle"
 
 
-def test_main_loads_netsetup_before_parsing_ioc_args():
+def test_main_loads_netsetup_before_parsing_and_preserves_interfaces():
     calls = []
 
     def parse_ioc_args():
         calls.append("parse")
-        return {"prefix": "TEST:"}, {"interfaces": ["0.0.0.0"]}
+        return {"prefix": "TEST:"}, {"interfaces": ["configured-interface"]}
 
     def load_epics_netsetup():
         calls.append("load")
@@ -140,4 +148,4 @@ def test_main_loads_netsetup_before_parsing_ioc_args():
 
     assert calls == ["load", "parse"]
     assert run.call_args.args[0]
-    assert run.call_args.kwargs["interfaces"] == ["0.0.0.0"]
+    assert run.call_args.kwargs["interfaces"] == ["configured-interface"]

@@ -11,5 +11,4 @@ pytest = ">=8"
 
 [tasks]
 ioc = "PYTHONPATH=src python -m smaract_home_ioc.ioc"
-ioc-local = "EPICS_CAS_AUTO_BEACON_ADDR_LIST=NO EPICS_CAS_BEACON_ADDR_LIST=10.67.91.255 PYTHONPATH=src python -m smaract_home_ioc.ioc"
 test = "PYTHONPATH=src pytest -q"

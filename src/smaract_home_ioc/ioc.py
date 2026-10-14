@@ -33,7 +33,7 @@ def load_epics_netsetup(path: str = DEFAULT_NETSETUP_FILE) -> None:
         match = EPICS_ENV_SET_RE.match(line)
         if match is None:
             continue
-        os.environ[match.group("name")] = match.group("value")
+        os.environ.setdefault(match.group("name"), match.group("value"))
 
 
 def log_epics_network_config(run_options: dict) -> None:
@@ -303,7 +303,6 @@ def parse_ioc_args():
 def main() -> None:
     load_epics_netsetup()
     ioc_options, run_options = parse_ioc_args()
-    run_options["interfaces"] = ["0.0.0.0"]
     log_epics_network_config(run_options)
     prefix = ioc_options["prefix"]
     ioc = SmaractHomeIOC(prefix=prefix)
